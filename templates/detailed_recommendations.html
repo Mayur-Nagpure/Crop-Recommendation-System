@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendations - Detailed Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-chart-line"></i> Top 3 Recommended Crops</h1>
+            <p class="subtitle">Detailed AI Analysis Based on Your Soil & Climate Data</p>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <div class="container">
+            <!-- Recommendations Cards -->
+            <section class="recommendations-section">
+                <div id="rec-details" class="rec-cards">
+                    <!-- Loading Skeletons -->
+                    <div class="rec-card-skeleton"></div>
+                    <div class="rec-card-skeleton"></div>
+                    <div class="rec-card-skeleton"></div>
+                </div>
+                <div id="no-data" class="no-data hidden">
+                    <p><i class="fas fa-exclamation-triangle"></i> No recommendations data found. <a href="/" target="_blank">Return to the main page</a> and try again.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // --- NEW & CORRECTED SCRIPT ---
+        
+        async function fetchCropDetails(cropName, userInputs) {
+            try {
+                // Call the API to get full details for a single crop
+                const response = await fetch(`/api/crop-details?crop=${encodeURIComponent(cropName)}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch details for ${cropName}`);
+                }
+                const details = await response.json();
+
+                // Create the personalized "why" text
+                const whyText = `This ${details.crop.toLowerCase()} is a strong match for your inputs (N:${userInputs.N}, P:${userInputs.P}, K:${userInputs.K}, Temp:${userInputs.temperature}°C, Humidity:${userInputs.humidity}%, pH:${userInputs.ph}, Rainfall:${userInputs.rainfall}mm). It is well-suited for the ${userInputs.season} season.`;
+
+                // Combine fetched details with the personalized text
+                return {
+                    crop: details.crop,
+                    description: details.description,
+                    why: whyText,
+                    how: details.growth_tips,
+                    when: `Best planted during ${details.planting_season}.`,
+                    soil: details.soil_requirements,
+                    score: details.score // The score is passed from the initial data
+                };
+            } catch (error) {
+                console.error(error);
+                // Return fallback data if the API fails
+                return {
+                    crop: cropName,
+                    description: 'Details could not be loaded.',
+                    why: 'This crop was recommended based on your inputs.',
+                    how: 'Standard growing practices apply.',
+                    when: 'Varies by region.',
+                    soil: 'Well-drained soil.'
+                };
+            }
+        }
+
+        function renderCard(rec) {
+            // Helper function to create bullet points from text
+            const createBullets = (text) => {
+                if (!text || typeof text !== 'string') return '<li>No tips available.</li>';
+                return text.split(/[.,;]+/).filter(s => s.trim()).map(s => `<li>${s.trim()}.</li>`).join('');
+            };
+
+            return `
+                <div class="rec-card">
+                    <div class="card-header">
+                        <h3>${rec.crop}</h3>
+                        <span class="score-badge">Score: ${rec.score.toFixed(2)}</span>
+                    </div>
+                    <img src="/static/images/crops/${rec.crop.toLowerCase()}.jpg" 
+                         alt="${rec.crop} Image" 
+                         onerror="this.style.display='none'"
+                         class="crop-image">
+                    <div class="card-body">
+                        <p class="description">${rec.description}</p>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-question-circle"></i> Why This Crop?</h4>
+                            <p>${rec.why}</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-tools"></i> How to Grow?</h4>
+                            <ul>${createBullets(rec.how)}</ul>
+                        </div>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-calendar"></i> When to Plant?</h4>
+                            <p>${rec.when}</p>
+                        </div>
+                        <div class="detail-section">
+                            <h4><i class="fas fa-seedling"></i> Soil Requirements</h4>
+                            <p>${rec.soil}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function initializePage() {
+            const container = document.getElementById('rec-details');
+            const noData = document.getElementById('no-data');
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataStr = urlParams.get('data');
+
+            if (!dataStr) {
+                container.innerHTML = ''; // Clear loading skeletons
+                noData.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const parsedData = JSON.parse(decodeURIComponent(dataStr));
+                const initialRecs = parsedData.recommendations || [];
+                const userInputs = parsedData.user_inputs || {};
+
+                if (initialRecs.length === 0) {
+                    throw new Error("No recommendations in data");
+                }
+                
+                // Fetch full details for each recommended crop
+                const detailPromises = initialRecs.map(rec => fetchCropDetails(rec.crop, userInputs));
+                const detailedRecs = await Promise.all(detailPromises);
+
+                // Add the original score to the detailed data
+                detailedRecs.forEach((detail, index) => {
+                    detail.score = initialRecs[index].score;
+                });
+
+                // Render the cards with the complete data
+                container.innerHTML = detailedRecs.map(renderCard).join('');
+                
+                // Animate card entry
+                const cards = container.querySelectorAll('.rec-card');
+                cards.forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        card.style.transition = 'all 0.5s ease-out';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, index * 150);
+                });
+
+            } catch (error) {
+                console.error("Failed to initialize recommendations:", error);
+                container.innerHTML = '';
+                noData.classList.remove('hidden');
+            }
+        }
+
+        // Run the initialization logic when the page loads
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+
+    <style>
+        /* Styles for this specific page */
+        body { font-family: 'Poppins', sans-serif; background: #f8f9fa; color: #2c3e50; line-height: 1.6; margin: 0; }
+        .header { background: #fff; padding: 25px 40px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header h1 { color: #27ae60; font-size: 2.4em; margin: 0; }
+        .subtitle { color: #7f8c8d; font-size: 1.1em; margin-top: 5px; }
+        .main-content { padding: 40px 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .rec-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 30px; }
+        
+        .rec-card { background: #fff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.08); overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; }
+        .rec-card:hover { transform: translateY(-8px); box-shadow: 0 12px 35px rgba(0,0,0,0.12); }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: linear-gradient(135deg, #27ae60, #2ecc71); color: white; }
+        .card-header h3 { margin: 0; font-size: 1.6em; }
+        .score-badge { background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 20px; font-size: 0.9em; font-weight: 600; }
+        
+        .crop-image { width: 100%; height: 220px; object-fit: cover; border-bottom: 1px solid #eee; }
+        .card-body { padding: 25px; flex-grow: 1; }
+        .description { font-size: 1.05em; color: #34495e; margin-bottom: 25px; }
+        
+        .detail-section { margin-bottom: 20px; border-left: 3px solid #27ae60; padding-left: 15px; }
+        .detail-section h4 { color: #2c3e50; font-size: 1.2em; margin-bottom: 8px; display: flex; align-items: center; }
+        .detail-section h4 i { margin-right: 10px; color: #27ae60; }
+        .detail-section p, .detail-section ul { color: #555; line-height: 1.7; margin: 0; }
+        .detail-section ul { padding-left: 20px; }
+        
+        .no-data { text-align: center; padding: 50px; background: #fff; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.08); }
+        .hidden { display: none; }
+        
+        /* Skeleton loader for better UX */
+        .rec-card-skeleton { background: #e9ecef; border-radius: 12px; height: 500px; animation: pulse 1.5s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</body>
+</html>

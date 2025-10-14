@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment
+.env
+
+# Models
+*.joblib
+
+# IDE / Editor
+.vscode/
+*.code-workspace
+tempCodeRunnerFile.py
+

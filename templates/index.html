@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendation System - AI-Powered Agriculture</title>
+    <!-- Links to your CSS, Font Awesome, and Google Fonts -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- The Corrected Header Structure -->
+    <header class="header">
+        <div class="header-animation-container">
+            <i class="floating-icon fas fa-leaf"></i>
+            <i class="floating-icon fas fa-seedling"></i>
+            <i class="floating-icon fab fa-pagelines"></i>
+            <i class="floating-icon fas fa-wind"></i>
+            <i class="floating-icon fas fa-clover"></i>
+            <i class="floating-icon fas fa-tractor"></i>
+        </div>
+        
+        <h1><i class="fas fa-leaf"></i> Agricultural Crop Recommendations</h1>
+        <p class="subtitle">Smart Farming Solution for Better Yields</p>
+    </header>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            {% if not logged_in %}
+            <!-- Auth Section -->
+            <div id="auth-section" class="auth-section">
+                <h2>Welcome Back!</h2>
+                <p>Log in or create an account to get personalized crop recommendations.</p>
+                <div class="auth-buttons">
+                    <button id="loginBtn" class="auth-btn primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+                    <button id="registerBtn" class="auth-btn secondary"><i class="fas fa-user-plus"></i> Register</button>
+                </div>
+            </div>
+
+            <!-- Login Modal -->
+            <div id="loginModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2><i class="fas fa-sign-in-alt"></i> Login to Your Account</h2>
+                    <form id="loginForm">
+                        <div class="input-group modal-input">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="loginUsername" placeholder="Username" required>
+                        </div>
+                        <div class="input-group modal-input">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="loginPassword" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="submit-btn modal-btn">Login</button>
+                        <p id="loginError" class="error"></p>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Register Modal -->
+            <div id="registerModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2><i class="fas fa-user-plus"></i> Create a New Account</h2>
+                    <form id="registerForm">
+                        <div class="input-group modal-input">
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="regUsername" placeholder="Choose a Username" required>
+                        </div>
+                        <div class="input-group modal-input">
+                            <i class="fas fa-lock input-icon"></i>
+                            <input type="password" id="regPassword" placeholder="Create a Password" required>
+                        </div>
+                        <button type="submit" class="submit-btn modal-btn">Register</button>
+                        <p id="regError" class="error"></p>
+                    </form>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- Recommendation Section -->
+            <div id="recommend-section" class="recommend-section">
+                <div class="top-bar">
+                    <h2><i class="fas fa-seedling"></i> Get AI Crop Recommendations</h2>
+                    <button id="logoutBtn" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+                <form id="recommendForm" class="recommend-form">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="N"><i class="fas fa-flask"></i> Nitrogen (N)</label>
+                            <input type="number" id="N" placeholder="e.g., 90" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="P"><i class="fas fa-vial"></i> Phosphorus (P)</label>
+                            <input type="number" id="P" placeholder="e.g., 42" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="K"><i class="fas fa-prescription-bottle"></i> Potassium (K)</label>
+                            <input type="number" id="K" placeholder="e.g., 43" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="temperature"><i class="fas fa-thermometer-half"></i> Temperature (°C)</label>
+                            <input type="number" id="temperature" placeholder="e.g., 20.8" step="0.1" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="humidity"><i class="fas fa-tint"></i> Humidity (%)</label>
+                            <input type="number" id="humidity" placeholder="e.g., 82" step="0.1" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="ph"><i class="fas fa-water"></i> pH Level</label>
+                            <input type="number" id="ph" placeholder="e.g., 6.5" step="0.1" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="rainfall"><i class="fas fa-cloud-rain"></i> Rainfall (mm)</label>
+                            <input type="number" id="rainfall" placeholder="e.g., 202" step="0.1" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="season"><i class="fas fa-calendar-alt"></i> Season</label>
+                            <select id="season">
+                                <option value="kharif">Kharif</option>
+                                <option value="rabi">Rabi</option>
+                                <option value="summer">Summer</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn"><i class="fas fa-magic"></i> Recommend Crops</button>
+                </form>
+                <div id="results" class="results"></div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Project Overview Card -->
+    <footer class="footer">
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Project Overview</h3>
+            <p>This system uses a Decision Tree model to recommend crops based on soil and climate data. It's trained on a Kaggle dataset of over 2,200 samples.</p>
+            <div class="tech-stack">
+                <span><i class="fas fa-robot"></i> Scikit-Learn</span>
+                <span><i class="fas fa-database"></i> Kaggle Dataset</span>
+                <span><i class="fas fa-server"></i> Flask & PostgreSQL</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>
