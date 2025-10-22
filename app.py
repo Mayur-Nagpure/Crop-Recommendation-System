@@ -1,13 +1,14 @@
-# app.py - Final Production-Ready Version
-# This version loads a pre-trained model and serves predictions.
-# It assumes train.py has already been run.
+# app.py - Final Production-Ready Version for Render Deployment
+# Updated: DATABASE_URL support, production debug control, safe model loading.
+# Run locally: python train.py first to generate models.
 
 import os
+import traceback
 import logging
 import json
 import urllib.parse
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -22,8 +23,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
-app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql+psycopg2://{os.environ.get('DB_USER')}:{os.environ.get('DB_PASSWORD')}@{os.environ.get('DB_HOST')}/{os.environ.get('DB_NAME')}"
+
+# Database: Use DATABASE_URL (Render provides this for free Postgres)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///local.db')  # Fallback to SQLite for local
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app)
@@ -143,4 +147,5 @@ def detailed_recommendations_page():
     return render_template('detailed_recommendations.html', data=data)
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    # Production: Debug only if explicitly set
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'False').lower() == 'true')
