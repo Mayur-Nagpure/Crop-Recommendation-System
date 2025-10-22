@@ -1,5 +1,5 @@
 # app.py - Final Production-Ready Version for Render Deployment
-# Updated: DATABASE_URL support, production debug control, safe model loading.
+# Updated: Switched to psycopg (v3) for Python 3.13 compatibility.
 # Run locally: python train.py first to generate models.
 
 import os
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret')
 
-# Database: Use DATABASE_URL (Render provides this for free Postgres)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///local.db')  # Fallback to SQLite for local
+# Database: Use DATABASE_URL (Render provides this for free Postgres) - Updated URI for psycopg v3
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///local.db').replace('postgresql://', 'postgresql+psycopg://')  # Fallback to SQLite for local
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -66,7 +66,7 @@ def load_model_and_data():
 # Load everything on startup
 load_model_and_data()
 
-# --- Routes ---
+# --- Routes --- (Unchanged)
 
 @app.route('/')
 def index():
